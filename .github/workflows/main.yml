@@ -1,53 +1,256 @@
-name: Build Flutter APK
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Klencod IDE - بيئة تطوير متكاملة</title>
+    <style>
+        :root {
+            --bg-dark: #1e1e2e;
+            --bg-panel: #181825;
+            --bg-header: #11111b;
+            --accent: #89b4fa;
+            --accent-hover: #b4befe;
+            --text-main: #cdd6f4;
+            --text-muted: #6c7086;
+            --border: #313244;
+            --success: #a6e3a1;
+            --danger: #f38ba8;
+        }
 
-on:
-  workflow_dispatch:
-    inputs:
-      flutter_version:
-        description: 'Flutter version'
-        required: true
-        default: '3.47.2'
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
 
-jobs:
-  build:
-    runs-on: ubuntu-24.04
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v5
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: var(--bg-dark);
+            color: var(--text-main);
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
 
-      - name: Setup Gradle Cache
-        uses: actions/cache@v5
-        with:
-          path: |
-            ~/.gradle/caches
-            ~/.gradle/wrapper
-          key: ${{ runner.os }}-gradle-${{ hashFiles('**/*.gradle*', '**/gradle-wrapper.properties') }}
-          restore-keys: |
-            ${{ runner.os }}-gradle-
+        /* الشريط العلوي */
+        header {
+            background-color: var(--bg-header);
+            padding: 10px 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid var(--border);
+        }
 
-      - name: Setup Java 17
-        uses: actions/setup-java@v5
-        with:
-          distribution: temurin
-          java-version: '17'
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-size: 1.3rem;
+            font-weight: bold;
+            color: var(--accent);
+            letter-spacing: 1px;
+        }
 
-      - name: Setup Flutter
-        uses: subosito/flutter-action@v2
-        with:
-          flutter-version: ${{ github.event.inputs.flutter_version }}
-          cache: true
-          channel: stable
+        .logo span {
+            background: var(--accent);
+            color: var(--bg-header);
+            padding: 2px 8px;
+            border-radius: 6px;
+            font-family: monospace;
+        }
 
-      - name: Get dependencies
-        run: flutter pub get
+        .actions {
+            display: flex;
+            gap: 10px;
+        }
 
-      - name: Build APK
-        run: flutter build apk --release
+        button {
+            background-color: var(--border);
+            color: var(--text-main);
+            border: none;
+            padding: 8px 16px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            transition: 0.2s;
+        }
 
-      - name: Upload APK
-        uses: actions/upload-artifact@v4
-        with:
-          name: app-release
-          path: build/app/outputs/flutter-apk/app-release.apk
-          if-no-files-found: error
-          retention-days: 7
+        button:hover {
+            background-color: #45475a;
+        }
+
+        .btn-run {
+            background-color: var(--success);
+            color: var(--bg-header);
+        }
+
+        .btn-run:hover {
+            background-color: #94e2d5;
+        }
+
+        .btn-download {
+            background-color: var(--accent);
+            color: var(--bg-header);
+        }
+
+        .btn-download:hover {
+            background-color: var(--accent-hover);
+        }
+
+        /* منطقة العمل الرئيسية */
+        .workspace {
+            display: flex;
+            flex: 1;
+            height: calc(100vh - 55px);
+        }
+
+        /* قسم المحرر */
+        .editor-section {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            border-left: 1px solid var(--border);
+        }
+
+        .tabs {
+            display: flex;
+            background-color: var(--bg-panel);
+            border-bottom: 1px solid var(--border);
+        }
+
+        .tab {
+            padding: 10px 20px;
+            cursor: pointer;
+            border-bottom: 2px solid transparent;
+            color: var(--text-muted);
+            font-family: monospace;
+            font-size: 0.95rem;
+            user-select: none;
+        }
+
+        .tab.active {
+            color: var(--accent);
+            border-bottom-color: var(--accent);
+            background-color: var(--bg-dark);
+        }
+
+        .editors-container {
+            flex: 1;
+            position: relative;
+        }
+
+        textarea {
+            width: 100%;
+            height: 100%;
+            background-color: var(--bg-dark);
+            color: var(--text-main);
+            border: none;
+            padding: 15px;
+            font-family: 'Consolas', 'Courier New', monospace;
+            font-size: 15px;
+            line-height: 1.6;
+            resize: none;
+            outline: none;
+            direction: ltr;
+            text-align: left;
+            display: none;
+        }
+
+        textarea.active {
+            display: block;
+        }
+
+        /* قسم المعاينة والكونسول */
+        .preview-section {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            background-color: #ffffff;
+        }
+
+        .preview-header {
+            background-color: var(--bg-panel);
+            color: var(--text-muted);
+            padding: 8px 15px;
+            font-size: 0.85rem;
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            justify-content: space-between;
+        }
+
+        iframe {
+            flex: 1;
+            border: none;
+            width: 100%;
+            background: white;
+        }
+
+        /* نافذة الكونسول (الطرفية) */
+        .console-container {
+            height: 150px;
+            background-color: var(--bg-header);
+            border-top: 1px solid var(--border);
+            display: flex;
+            flex-direction: column;
+        }
+
+        .console-header {
+            padding: 6px 15px;
+            background-color: var(--bg-panel);
+            font-size: 0.8rem;
+            color: var(--text-muted);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .console-output {
+            flex: 1;
+            padding: 10px 15px;
+            font-family: monospace;
+            font-size: 0.9rem;
+            overflow-y: auto;
+            direction: ltr;
+            text-align: left;
+        }
+
+        .log-item {
+            margin-bottom: 4px;
+            border-bottom: 1px solid #1e1e2e;
+            padding-bottom: 2px;
+        }
+
+        .log-error {
+            color: var(--danger);
+        }
+    </style>
+</head>
+<body>
+
+    <header>
+        <div class="logo">
+            <span>&lt;/&gt;</span> Klencod IDE
+        </div>
+        <div class="actions">
+            <button class="btn-run" onclick="runCode()">▶ تشغيل (Run)</button>
+            <button class="btn-download" onclick="downloadProject()">⬇ حفظ المشروع</button>
+            <button onclick="clearAll()">🗑 مسح</button>
+        </div>
+    </header>
+
+    <div class="workspace">
+        <!-- قسم كتابة الكود -->
+        <div class="editor-section">
+            <div class="tabs">
+                <div class="tab active" onclick="switchTab('html')">index.html</div>
+                <div class="tab" onclick="switchTab('css')">style.css</div>
+                <div class="tab" onclick="switchTab('js')">script.js</div>
+            </div>
+            <div class="editors-container">
+                <textarea id="html-code" class="active" placeholder="
